@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Clickable US Maps</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+    }
+    .tabs {
+        display: flex;
+        background: #333;
+        color: white;
+        padding: 10px;
+    }
+    .tab {
+        margin-right: 20px;
+        cursor: pointer;
+    }
+    .tab.active {
+        font-weight: bold;
+        text-decoration: underline;
+    }
+    .map-container {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+    .map-container.active {
+        display: block;
+    }
+    svg {
+        border: 1px solid #ccc;
+    }
+</style>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
+</head>
+<body>
+
+<div class="tabs">
+    <div class="tab active" data-tab="1">Map 1</div>
+    <div class="tab" data-tab="2">Map 2</div>
+</div>
+
+<div id="map1" class="map-container active"></div>
+<div id="map2" class="map-container"></div>
+
+<script>
+const width = 960, height = 600;
+
+// Function to draw a map in a container
+function drawMap(containerId, storageKey) {
+    const svg = d3.select("#" + containerId)
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    const projection = d3.geoAlbersUsa().scale(1200).translate([width/2, height/2]);
+    const path = d3.geoPath().projection(projection);
+
+    // Load saved colors
+    const savedColors = JSON.parse(localStorage.getItem(storageKey) || "{}");
+
+    d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
+        const states = topojson.feature(us, us.objects.states).features;
+
+        svg.selectAll("path")
+            .data(states)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("fill", d => savedColors[d.id] || "#ccc")
+            .attr("stroke", "#333")
+            .on("click", function(event, d) {
+                const color = prompt("Enter a color (name or hex):", savedColors[d.id] || "#ff0000");
+                if (color) {
+                    savedColors[d.id] = color;
+                    d3.select(this).attr("fill", color);
+                    localStorage.setItem(storageKey, JSON.stringify(savedColors));
+                }
+            });
+    });
+}
+
+// Draw both maps
+drawMap("map1", "map1Colors");
+drawMap("map2", "map2Colors");
+
+// Tab switching
+document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+
+        document.querySelectorAll(".map-container").forEach(c => c.classList.remove("active"));
+        document.getElementById("map" + tab.dataset.tab).classList.add("active");
+    });
+});
+</script>
+</body>
+</html>
