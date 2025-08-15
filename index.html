@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Clickable US Maps</title>
+<title>Clickable US Maps with Color Picker</title>
 <style>
     body {
         font-family: Arial, sans-serif;
         margin: 0;
+        background: #f5f5f5;
     }
     .tabs {
         display: flex;
@@ -32,6 +33,17 @@
     }
     svg {
         border: 1px solid #ccc;
+        background: white;
+    }
+    .controls {
+        text-align: center;
+        margin: 10px 0;
+    }
+    input[type="color"] {
+        width: 60px;
+        height: 40px;
+        border: none;
+        cursor: pointer;
     }
 </style>
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -44,11 +56,21 @@
     <div class="tab" data-tab="2">Map 2</div>
 </div>
 
+<div class="controls">
+    <label>Select Color: <input type="color" id="colorPicker" value="#ff0000"></label>
+</div>
+
 <div id="map1" class="map-container active"></div>
 <div id="map2" class="map-container"></div>
 
 <script>
 const width = 960, height = 600;
+
+// Keep track of the selected color
+let selectedColor = document.getElementById("colorPicker").value;
+document.getElementById("colorPicker").addEventListener("input", e => {
+    selectedColor = e.target.value;
+});
 
 // Function to draw a map in a container
 function drawMap(containerId, storageKey) {
@@ -74,12 +96,9 @@ function drawMap(containerId, storageKey) {
             .attr("fill", d => savedColors[d.id] || "#ccc")
             .attr("stroke", "#333")
             .on("click", function(event, d) {
-                const color = prompt("Enter a color (name or hex):", savedColors[d.id] || "#ff0000");
-                if (color) {
-                    savedColors[d.id] = color;
-                    d3.select(this).attr("fill", color);
-                    localStorage.setItem(storageKey, JSON.stringify(savedColors));
-                }
+                savedColors[d.id] = selectedColor;
+                d3.select(this).attr("fill", selectedColor);
+                localStorage.setItem(storageKey, JSON.stringify(savedColors));
             });
     });
 }
