@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Clickable US Maps with Color Picker</title>
+<title>Clickable US Maps with Floating Color Picker</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -35,12 +35,26 @@
         border: 1px solid #ccc;
         background: white;
     }
-    .controls {
-        text-align: center;
-        margin: 10px 0;
+    /* Floating color picker */
+    .color-toolbar {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 1000;
+    }
+    .color-toolbar label {
+        font-size: 14px;
     }
     input[type="color"] {
-        width: 60px;
+        width: 40px;
         height: 40px;
         border: none;
         cursor: pointer;
@@ -52,12 +66,14 @@
 <body>
 
 <div class="tabs">
-    <div class="tab active" data-tab="1">Map 1</div>
-    <div class="tab" data-tab="2">Map 2</div>
+    <div class="tab active" data-tab="1">States I've visited</div>
+    <div class="tab" data-tab="2">50 License plate game</div>
 </div>
 
-<div class="controls">
-    <label>Select Color: <input type="color" id="colorPicker" value="#ff0000"></label>
+<!-- Floating color picker -->
+<div class="color-toolbar">
+    <label>Color:</label>
+    <input type="color" id="colorPicker" value="#ff0000">
 </div>
 
 <div id="map1" class="map-container active"></div>
