@@ -74,22 +74,16 @@
         overflow: hidden;
         padding: 0;
     }
-    /* Tooltip */
-    .tooltip {
-        position: absolute;
-        background: rgba(0,0,0,0.8);
-        color: white;
-        padding: 5px 8px;
-        border-radius: 6px;
-        font-size: 14px;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s;
+    text.state-label {
+        font-size: 12px;
+        font-weight: bold;
+        text-anchor: middle;
+        fill: #111;
+        pointer-events: none; /* Don’t block clicks */
     }
 </style>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://unpkg.com/topojson-client@3"></script>
-<script src="https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"></script>
 </head>
 <body>
 
@@ -104,9 +98,6 @@
     <input type="color" id="colorPicker" value="#ff0000">
 </div>
 
-<!-- Tooltip -->
-<div class="tooltip" id="tooltip"></div>
-
 <div id="map1" class="map-container active"></div>
 <div id="map2" class="map-container"></div>
 
@@ -119,19 +110,16 @@ document.getElementById("colorPicker").addEventListener("input", e => {
     selectedColor = e.target.value;
 });
 
-const tooltip = d3.select("#tooltip");
-
-// Map of state IDs → names
-const stateNames = new Map([
-  [1,"Alabama"],[2,"Alaska"],[4,"Arizona"],[5,"Arkansas"],[6,"California"],[8,"Colorado"],[9,"Connecticut"],
-  [10,"Delaware"],[11,"District of Columbia"],[12,"Florida"],[13,"Georgia"],[15,"Hawaii"],[16,"Idaho"],
-  [17,"Illinois"],[18,"Indiana"],[19,"Iowa"],[20,"Kansas"],[21,"Kentucky"],[22,"Louisiana"],[23,"Maine"],
-  [24,"Maryland"],[25,"Massachusetts"],[26,"Michigan"],[27,"Minnesota"],[28,"Mississippi"],[29,"Missouri"],
-  [30,"Montana"],[31,"Nebraska"],[32,"Nevada"],[33,"New Hampshire"],[34,"New Jersey"],[35,"New Mexico"],
-  [36,"New York"],[37,"North Carolina"],[38,"North Dakota"],[39,"Ohio"],[40,"Oklahoma"],[41,"Oregon"],
-  [42,"Pennsylvania"],[44,"Rhode Island"],[45,"South Carolina"],[46,"South Dakota"],[47,"Tennessee"],
-  [48,"Texas"],[49,"Utah"],[50,"Vermont"],[51,"Virginia"],[53,"Washington"],[54,"West Virginia"],
-  [55,"Wisconsin"],[56,"Wyoming"]
+// State abbreviations (FIPS → code)
+const stateAbbr = new Map([
+  [1,"AL"],[2,"AK"],[4,"AZ"],[5,"AR"],[6,"CA"],[8,"CO"],[9,"CT"],
+  [10,"DE"],[11,"DC"],[12,"FL"],[13,"GA"],[15,"HI"],[16,"ID"],
+  [17,"IL"],[18,"IN"],[19,"IA"],[20,"KS"],[21,"KY"],[22,"LA"],[23,"ME"],
+  [24,"MD"],[25,"MA"],[26,"MI"],[27,"MN"],[28,"MS"],[29,"MO"],
+  [30,"MT"],[31,"NE"],[32,"NV"],[33,"NH"],[34,"NJ"],[35,"NM"],
+  [36,"NY"],[37,"NC"],[38,"ND"],[39,"OH"],[40,"OK"],[41,"OR"],
+  [42,"PA"],[44,"RI"],[45,"SC"],[46,"SD"],[47,"TN"],[48,"TX"],
+  [49,"UT"],[50,"VT"],[51,"VA"],[53,"WA"],[54,"WV"],[55,"WI"],[56,"WY"]
 ]);
 
 // Function to draw a map in a container
@@ -150,6 +138,7 @@ function drawMap(containerId, storageKey) {
     d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
         const states = topojson.feature(us, us.objects.states).features;
 
+        // Draw states
         svg.selectAll("path")
             .data(states)
             .enter()
@@ -162,16 +151,20 @@ function drawMap(containerId, storageKey) {
                 savedColors[d.id] = selectedColor;
                 d3.select(this).attr("fill", selectedColor);
                 localStorage.setItem(storageKey, JSON.stringify(savedColors));
-            })
-            .on("mousemove", function(event, d) {
-                tooltip.style("opacity", 1)
-                       .html(stateNames.get(d.id) || "Unknown")
-                       .style("left", (event.pageX + 12) + "px")
-                       .style("top", (event.pageY - 28) + "px");
-            })
-            .on("mouseout", function() {
-                tooltip.style("opacity", 0);
             });
+
+        // Add state abbreviations
+        svg.selectAll("text")
+            .data(states)
+            .enter()
+            .append("text")
+            .attr("class", "state-label")
+            .attr("transform", d => {
+                const c = path.centroid(d);
+                return c ? `translate(${c[0]},${c[1]})` : null;
+            })
+            .text(d => stateAbbr.get(d.id) || "")
+            .style("fill", "#111");
     });
 }
 
