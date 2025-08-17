@@ -2,26 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Clickable US Maps with Floating Color Picker</title>
+<title>My US Maps</title>
 <style>
     body {
-        font-family: Arial, sans-serif;
+        font-family: 'Segoe UI', Tahoma, sans-serif;
         margin: 0;
-        background: #f5f5f5;
+        background: #f0f2f5;
+        color: #333;
     }
     .tabs {
         display: flex;
-        background: #333;
+        justify-content: center;
+        background: #1e3a8a;
         color: white;
-        padding: 10px;
+        padding: 12px;
+        font-size: 18px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
     .tab {
-        margin-right: 20px;
+        margin: 0 20px;
         cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 8px;
+        transition: background 0.3s;
+    }
+    .tab:hover {
+        background: rgba(255,255,255,0.15);
     }
     .tab.active {
         font-weight: bold;
-        text-decoration: underline;
+        background: rgba(255,255,255,0.25);
     }
     .map-container {
         display: none;
@@ -32,8 +42,9 @@
         display: block;
     }
     svg {
-        border: 1px solid #ccc;
+        border-radius: 12px;
         background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     /* Floating color picker */
     .color-toolbar {
@@ -42,26 +53,43 @@
         right: 20px;
         background: white;
         border: 1px solid #ccc;
-        border-radius: 10px;
-        padding: 8px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        border-radius: 12px;
+        padding: 10px 14px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         z-index: 1000;
     }
     .color-toolbar label {
         font-size: 14px;
+        font-weight: 600;
     }
     input[type="color"] {
         width: 40px;
         height: 40px;
         border: none;
         cursor: pointer;
+        border-radius: 50%;
+        overflow: hidden;
+        padding: 0;
+    }
+    /* Tooltip */
+    .tooltip {
+        position: absolute;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 5px 8px;
+        border-radius: 6px;
+        font-size: 14px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
     }
 </style>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://unpkg.com/topojson-client@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"></script>
 </head>
 <body>
 
@@ -76,6 +104,9 @@
     <input type="color" id="colorPicker" value="#ff0000">
 </div>
 
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
 <div id="map1" class="map-container active"></div>
 <div id="map2" class="map-container"></div>
 
@@ -87,6 +118,21 @@ let selectedColor = document.getElementById("colorPicker").value;
 document.getElementById("colorPicker").addEventListener("input", e => {
     selectedColor = e.target.value;
 });
+
+const tooltip = d3.select("#tooltip");
+
+// Map of state IDs → names
+const stateNames = new Map([
+  [1,"Alabama"],[2,"Alaska"],[4,"Arizona"],[5,"Arkansas"],[6,"California"],[8,"Colorado"],[9,"Connecticut"],
+  [10,"Delaware"],[11,"District of Columbia"],[12,"Florida"],[13,"Georgia"],[15,"Hawaii"],[16,"Idaho"],
+  [17,"Illinois"],[18,"Indiana"],[19,"Iowa"],[20,"Kansas"],[21,"Kentucky"],[22,"Louisiana"],[23,"Maine"],
+  [24,"Maryland"],[25,"Massachusetts"],[26,"Michigan"],[27,"Minnesota"],[28,"Mississippi"],[29,"Missouri"],
+  [30,"Montana"],[31,"Nebraska"],[32,"Nevada"],[33,"New Hampshire"],[34,"New Jersey"],[35,"New Mexico"],
+  [36,"New York"],[37,"North Carolina"],[38,"North Dakota"],[39,"Ohio"],[40,"Oklahoma"],[41,"Oregon"],
+  [42,"Pennsylvania"],[44,"Rhode Island"],[45,"South Carolina"],[46,"South Dakota"],[47,"Tennessee"],
+  [48,"Texas"],[49,"Utah"],[50,"Vermont"],[51,"Virginia"],[53,"Washington"],[54,"West Virginia"],
+  [55,"Wisconsin"],[56,"Wyoming"]
+]);
 
 // Function to draw a map in a container
 function drawMap(containerId, storageKey) {
@@ -109,12 +155,22 @@ function drawMap(containerId, storageKey) {
             .enter()
             .append("path")
             .attr("d", path)
-            .attr("fill", d => savedColors[d.id] || "#ccc")
-            .attr("stroke", "#333")
+            .attr("fill", d => savedColors[d.id] || "#e5e7eb")
+            .attr("stroke", "#222")
+            .attr("stroke-width", 1.2)
             .on("click", function(event, d) {
                 savedColors[d.id] = selectedColor;
                 d3.select(this).attr("fill", selectedColor);
                 localStorage.setItem(storageKey, JSON.stringify(savedColors));
+            })
+            .on("mousemove", function(event, d) {
+                tooltip.style("opacity", 1)
+                       .html(stateNames.get(d.id) || "Unknown")
+                       .style("left", (event.pageX + 12) + "px")
+                       .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function() {
+                tooltip.style("opacity", 0);
             });
     });
 }
